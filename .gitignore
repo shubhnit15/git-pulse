@@ -1,0 +1,23 @@
+# SQLite Database
+git_pulse.db
+git_pulse.db-journal
+
+# Python caching
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Test Repository (generated during verify.py)
+test_repo/

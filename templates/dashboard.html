@@ -1,0 +1,176 @@
+<!-- Repository Title & Live Indicator Header -->
+<div class="p-6 md:p-8 flex flex-col md:flex-row md:items-center md:justify-between border-b border-slate-800/60 bg-[#0f172a]/20">
+    <div class="min-w-0 flex-1">
+        <div class="flex items-center space-x-3">
+            <h1 class="font-display font-extrabold text-2xl text-slate-100 tracking-tight truncate">{{ repo.name }}</h1>
+            <!-- Pulsing Active Badge -->
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-950/50 text-emerald-400 border border-emerald-500/20">
+                <span class="h-2 w-2 rounded-full bg-emerald-400 mr-1.5 animate-pulse"></span>
+                Monitoring Live
+            </span>
+        </div>
+        <p class="text-xs font-mono text-slate-500 mt-1 truncate" title="{{ repo.path }}">{{ repo.path }}</p>
+    </div>
+
+    <!-- Right Header Action & Detail -->
+    <div class="mt-4 md:mt-0 flex items-center space-x-6 text-xs text-slate-400 shrink-0 font-medium">
+        <button 
+            onclick="const inp = document.querySelector('input[name=\'path\']'); inp.focus(); inp.select();"
+            class="flex items-center space-x-1.5 bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-md transition-all shrink-0 cursor-pointer"
+        >
+            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Track Another Repo</span>
+        </button>
+        {% if repo.last_scanned_commit %}
+            <div>
+                <span class="text-slate-500 block uppercase tracking-wider text-xxs font-bold">Latest Head Commit</span>
+                <span class="font-mono text-indigo-300 text-sm mt-0.5 block">{{ repo.last_scanned_commit[:8] }}</span>
+            </div>
+        {% endif %}
+        <div class="text-right">
+            <span class="text-slate-500 block uppercase tracking-wider text-xxs font-bold">Auto-Polling</span>
+            <span class="text-indigo-400 text-sm mt-0.5 block font-semibold">Every 30s</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main Scrollable Dashboard Content Area -->
+<div class="p-6 md:p-8 space-y-8">
+    
+    <!-- Error/Warning Notification Banner if repository is detached -->
+    {% if error_msg %}
+        <div class="flex items-center space-x-3 bg-rose-950/30 border border-rose-500/20 rounded-xl p-4 text-rose-300 text-xs">
+            <svg class="h-5 w-5 text-rose-400 shrink-0 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span class="font-semibold">{{ error_msg }}</span>
+        </div>
+    {% endif %}
+
+    <!-- METRICS SUMMARY CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <!-- Commits -->
+        <div class="bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:border-slate-700/80">
+            <div class="absolute -right-4 -bottom-4 text-slate-900/10 opacity-30 pointer-events-none">
+                <svg class="h-24 w-24" fill="currentColor" viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+            </div>
+            <span class="text-slate-500 block uppercase tracking-wider text-xxs font-bold">Total Commits</span>
+            <span class="text-3xl font-display font-extrabold text-slate-100 mt-2 block tracking-tight">{{ "{:,}".format(summary.total_commits) }}</span>
+            <span class="text-xs text-indigo-400 font-semibold mt-1 block">Full History Scanned</span>
+        </div>
+
+        <!-- Authors -->
+        <div class="bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:border-slate-700/80">
+            <span class="text-slate-500 block uppercase tracking-wider text-xxs font-bold">Active Contributors</span>
+            <span class="text-3xl font-display font-extrabold text-slate-100 mt-2 block tracking-tight">{{ summary.total_authors }}</span>
+            <span class="text-xs text-violet-400 font-semibold mt-1 block">Unique Committers</span>
+        </div>
+
+        <!-- Additions -->
+        <div class="bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:border-emerald-500/30">
+            <span class="text-slate-500 block uppercase tracking-wider text-xxs font-bold">Lines Added</span>
+            <span class="text-3xl font-display font-extrabold text-emerald-400 mt-2 block tracking-tight">+{{ "{:,}".format(summary.total_additions) }}</span>
+            <span class="text-xs text-emerald-500/80 font-semibold mt-1 block">Aggregate code insertions</span>
+        </div>
+
+        <!-- Deletions -->
+        <div class="bg-[#0f172a]/40 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl relative overflow-hidden transition-all duration-300 hover:border-rose-500/30">
+            <span class="text-slate-500 block uppercase tracking-wider text-xxs font-bold">Lines Deleted</span>
+            <span class="text-3xl font-display font-extrabold text-rose-400 mt-2 block tracking-tight">-{{ "{:,}".format(summary.total_deletions) }}</span>
+            <span class="text-xs text-rose-500/80 font-semibold mt-1 block">Aggregate code deletions</span>
+        </div>
+    </div>
+
+    <!-- CHARTS GRID ROW 1 (VELOCITY & DONUT) -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <!-- Velocity Line/Area Chart -->
+        <div class="lg:col-span-2 bg-[#0f172a]/30 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between">
+            <div class="mb-4">
+                <h3 class="font-display font-bold text-lg text-slate-200">Code Change Velocity</h3>
+                <p class="text-slate-500 text-xs mt-0.5">Lines added and deleted per day over the last 14 active days.</p>
+            </div>
+            <div class="flex-1 flex items-center justify-center min-h-[220px]">
+                {{ velocity_svg|safe }}
+            </div>
+        </div>
+
+        <!-- File Type Donut Chart -->
+        <div class="bg-[#0f172a]/30 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl flex flex-col justify-between">
+            <div class="mb-4">
+                <h3 class="font-display font-bold text-lg text-slate-200">File Type Distribution</h3>
+                <p class="text-slate-500 text-xs mt-0.5">Volumetric composition by file extensions based on total changed lines.</p>
+            </div>
+            <div class="flex-1 flex items-center justify-center min-h-[220px]">
+                {{ donut_svg|safe }}
+            </div>
+        </div>
+    </div>
+
+    <!-- CHARTS GRID ROW 2 (HEATMAP) -->
+    <div class="bg-[#0f172a]/30 border border-slate-800/80 rounded-2xl p-5 md:p-6 shadow-xl">
+        <div class="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="font-display font-bold text-lg text-slate-200">Active Coding Hours Heatmap</h3>
+                <p class="text-slate-500 text-xs mt-0.5">Grid displaying distribution of commit events across days and hours.</p>
+            </div>
+        </div>
+        <div class="w-full overflow-x-auto min-w-[650px] flex items-center justify-center">
+            {{ heatmap_svg|safe }}
+        </div>
+    </div>
+
+    <!-- RECENT COMMITS TABLE -->
+    <div class="bg-[#0f172a]/30 border border-slate-800/80 rounded-2xl shadow-xl overflow-hidden">
+        <div class="p-5 md:p-6 border-b border-slate-800/60 bg-[#0f172a]/20">
+            <h3 class="font-display font-bold text-lg text-slate-200">Recent Commits Log</h3>
+            <p class="text-slate-500 text-xs mt-0.5">Chronological commit activity log registered on the local repository branch.</p>
+        </div>
+        <div class="overflow-x-auto">
+            {% if recent_commits %}
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead>
+                        <tr class="text-slate-500 uppercase tracking-wider font-bold border-b border-slate-800/50 bg-[#0f172a]/10">
+                            <th class="py-3.5 px-6">Commit</th>
+                            <th class="py-3.5 px-6">Message</th>
+                            <th class="py-3.5 px-6">Author</th>
+                            <th class="py-3.5 px-6">Date</th>
+                            <th class="py-3.5 px-6 text-right">Changes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/40">
+                        {% for commit in recent_commits %}
+                            <tr class="hover:bg-slate-800/10 transition-colors">
+                                <!-- SHA -->
+                                <td class="py-4 px-6 font-mono text-indigo-400 font-semibold">{{ commit.sha[:7] }}</td>
+                                <!-- Message -->
+                                <td class="py-4 px-6 text-slate-200 max-w-[280px] truncate" title="{{ commit.message }}">{{ commit.message }}</td>
+                                <!-- Author -->
+                                <td class="py-4 px-6 text-slate-400 truncate">{{ commit.author }}</td>
+                                <!-- Date -->
+                                <td class="py-4 px-6 text-slate-400 whitespace-nowrap">{{ commit.formatted_date }}</td>
+                                <!-- Stats -->
+                                <td class="py-4 px-6 text-right whitespace-nowrap font-medium font-mono text-xxs">
+                                    {% if commit.additions > 0 %}
+                                        <span class="text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-500/10">+{{ commit.additions }}</span>
+                                    {% endif %}
+                                    {% if commit.deletions > 0 %}
+                                        <span class="text-rose-400 bg-rose-950/40 px-1.5 py-0.5 rounded border border-rose-500/10 ml-1.5">-{{ commit.deletions }}</span>
+                                    {% endif %}
+                                    {% if commit.additions == 0 and commit.deletions == 0 %}
+                                        <span class="text-slate-500">—</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-center py-10 text-slate-500">
+                    No recent commits found in the database.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

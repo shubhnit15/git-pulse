@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git-Pulse — Local Repo Analytics</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- HTMX CDN -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0b0f19;
+        }
+        h1, h2, h3, .font-display {
+            font-family: 'Outfit', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Pulse Animation */
+        @keyframes pulse-glow {
+            0%, 100% {
+                box-shadow: 0 0 15px -3px rgba(99, 102, 241, 0.4);
+            }
+            50% {
+                box-shadow: 0 0 25px 2px rgba(99, 102, 241, 0.6);
+            }
+        }
+        .pulse-active {
+            animation: pulse-glow 3s infinite;
+        }
+    </style>
+</head>
+<body class="text-slate-100 h-screen overflow-hidden flex bg-[#0b0f19]">
+
+    <!-- SIDEBAR -->
+    <aside class="w-80 h-screen bg-[#0f172a]/80 border-r border-slate-800 flex flex-col shrink-0 backdrop-blur-md overflow-hidden">
+        <!-- Logo Header -->
+        <div class="p-5 border-b border-slate-800/60">
+            <div class="flex items-center space-x-3">
+                <!-- Glowing Pulsing Indicator -->
+                <span class="relative flex h-3.5 w-3.5">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-indigo-500"></span>
+                </span>
+                <span class="font-display font-bold text-2xl tracking-tight bg-gradient-to-r from-indigo-400 via-violet-400 to-emerald-400 bg-clip-text text-transparent">Git-Pulse</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1.5 font-medium">Resource-Optimized Repo Analytics</p>
+        </div>
+
+        <!-- Add Repository Form: Moved to top for maximum visibility -->
+        <div class="p-5 border-b border-slate-800/60 bg-slate-950/20">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Track New Repository</h4>
+                <!-- Quick Help Badge -->
+                <span class="text-xxs text-indigo-400 font-mono" title="Requires absolute folder path">Local Git Path</span>
+            </div>
+            <form 
+                hx-post="/repo" 
+                hx-target="#path-error" 
+                hx-swap="innerHTML"
+                hx-indicator="#add-btn-spinner"
+                class="space-y-2"
+            >
+                <div class="relative">
+                    <input 
+                        type="text" 
+                        name="path" 
+                        placeholder="e.g. C:\Users\ACer\my-project" 
+                        class="w-full bg-[#0b0f19] border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition-all font-mono"
+                        required
+                    />
+                </div>
+                <button 
+                    type="submit" 
+                    class="w-full flex items-center justify-center bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-lg shadow-lg shadow-indigo-600/15 transition-all"
+                >
+                    <span id="add-btn-spinner" class="htmx-indicator animate-spin mr-2 h-3.5 w-3.5 border-2 border-white border-t-transparent rounded-full"></span>
+                    + Register Repo
+                </button>
+                <div id="path-error" class="min-h-[1.25rem] text-center"></div>
+            </form>
+        </div>
+
+        <!-- Repositories List (Scrollable Area) -->
+        <div class="flex-1 overflow-y-auto px-4 py-5 space-y-4">
+            <div>
+                <div class="flex items-center justify-between mb-3 px-2">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Monitored Repositories</h3>
+                    <span class="text-xxs bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded-md font-mono">{{ repos|length }}</span>
+                </div>
+                
+                {% if repos %}
+                    <ul class="space-y-1.5">
+                        {% for repo in repos %}
+                            <li class="group flex items-center justify-between rounded-lg px-3 py-2.5 transition-all duration-200 {% if active_repo and active_repo.id == repo.id %}bg-indigo-950/40 border border-indigo-500/30 text-indigo-200 font-medium pulse-active{% else %}hover:bg-slate-800/40 border border-transparent text-slate-300 hover:text-slate-100{% endif %}">
+                                <a href="/?active_id={{ repo.id }}" class="flex-1 min-w-0 pr-2">
+                                    <div class="truncate text-sm font-semibold">{{ repo.name }}</div>
+                                    <div class="truncate text-xxs text-slate-500 font-mono mt-0.5" title="{{ repo.path }}">{{ repo.path }}</div>
+                                </a>
+                                <button 
+                                    hx-delete="/repo/{{ repo.id }}"
+                                    hx-confirm="Are you sure you want to stop tracking '{{ repo.name }}' in Git-Pulse?"
+                                    class="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition-opacity p-1"
+                                    title="Stop tracking repo"
+                                >
+                                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <div class="text-center py-8 px-4 border border-dashed border-slate-800 rounded-xl bg-slate-900/10">
+                        <svg class="h-8 w-8 text-slate-600 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                        <p class="text-xs text-slate-500">No repositories registered yet.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Subtle Branding Footer -->
+        <div class="p-4 border-t border-slate-800/60 bg-slate-950/40 text-center">
+            <span class="text-xxs text-slate-600 font-mono">v1.0.0 • SQLite • Fast & Light</span>
+        </div>
+    </aside>
+
+    <!-- MAIN DISPLAY PANEL (Fixed scroll issue: h-screen overflow-y-auto) -->
+    <main class="flex-1 h-screen overflow-y-auto bg-[#0b0f19] flex flex-col min-w-0">
+        {% if active_repo %}
+            <!-- Dashboard Container: auto-polls stats every 30 seconds -->
+            <div 
+                id="dashboard-container"
+                hx-get="/repo/{{ active_repo.id }}/dashboard"
+                hx-trigger="load, every 30s"
+                hx-swap="innerHTML"
+                class="w-full min-h-full"
+            >
+                <!-- Initial scanning block prior to HTMX response -->
+                <div class="flex flex-col items-center justify-center min-h-screen py-20 space-y-4">
+                    <div class="relative flex items-center justify-center">
+                        <span class="animate-ping absolute inline-flex h-16 w-16 rounded-full bg-indigo-500 opacity-20"></span>
+                        <div class="h-12 w-12 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                    <span class="text-slate-400 font-medium tracking-wide font-display text-lg">Analyzing Repository logs...</span>
+                    <span class="text-xs text-slate-500 font-mono">This may take up to 3 seconds for large histories.</span>
+                </div>
+            </div>
+        {% else %}
+            <!-- Blank Landing Page -->
+            <div class="flex-1 flex flex-col items-center justify-center p-8 max-w-xl mx-auto text-center">
+                <!-- Visual Glowing Badge -->
+                <div class="h-16 w-16 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center mb-6 shadow-xl shadow-indigo-500/5 relative pulse-active">
+                    <svg class="h-8 w-8 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <h2 class="font-display font-extrabold text-3xl text-slate-100 tracking-tight leading-tight">Welcome to Git-Pulse</h2>
+                <p class="text-slate-400 text-sm mt-3 leading-relaxed">
+                    A local analytics dashboard tailored to low-spec hardware. Analyze directory logs, calculate change velocities, map active hour matrices, and visualize distribution graphs.
+                </p>
+                <div class="mt-8 p-4 bg-slate-900/40 border border-slate-800/80 rounded-xl text-left w-full">
+                    <h3 class="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">How to get started:</h3>
+                    <ul class="text-xs text-slate-400 space-y-2">
+                        <li class="flex items-start">
+                            <span class="text-indigo-400 mr-2 font-bold">1.</span>
+                            Input the absolute path of a Git repository in the **"Track New Repository"** panel (top left).
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-indigo-400 mr-2 font-bold">2.</span>
+                            Click **"+ Register Repo"** to instantly crawl logs and render your dashboard.
+                        </li>
+                        <li class="flex items-start">
+                            <span class="text-indigo-400 mr-2 font-bold">3.</span>
+                            Add multiple repositories in the same panel to switch between dashboards on-demand.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        {% endif %}
+    </main>
+
+</body>
+</html>
