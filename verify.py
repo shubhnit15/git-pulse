@@ -53,11 +53,14 @@ def setup_test_repo():
 
 def verify_git_pulse():
     # Delete existing database file for a clean slate
-    db_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "git_pulse.db")
+    db_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "api", "git_pulse.db")
     if os.path.exists(db_file):
-        os.remove(db_file)
-        print("Cleared old database file.")
-        
+        try:
+            os.remove(db_file)
+            print("Cleared old database file.")
+        except Exception as e:
+            print(f"Notice: Database is locked: {e}")
+            
     # Setup test repository
     setup_test_repo()
     
