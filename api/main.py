@@ -12,9 +12,9 @@ app = FastAPI(title="Git-Pulse Dashboard")
 # Initialize SQLite database schema
 database.init_db()
 
-# Setup templates
-TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
-os.makedirs(TEMPLATES_DIR, exist_ok=True)
+# Setup templates (looking one level up since main.py is now inside api/)
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+TEMPLATES_DIR = os.path.join(parent_dir, "templates")
 templates = Jinja2Templates(directory=TEMPLATES_DIR)
 
 @app.get("/", response_class=HTMLResponse)

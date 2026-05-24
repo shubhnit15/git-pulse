@@ -1,4 +1,8 @@
 import os
+import sys
+# Include the api directory in sys.path to load moved modules
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "api"))
+
 import shutil
 import git
 import database
